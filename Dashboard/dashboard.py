@@ -1,291 +1,202 @@
-import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-import matplotlib.image as mpimg
+import plotly.express as px
 import streamlit as st
 
-# Set style seaborn
-sns.set(style='dark')
+# load dataset
+df = pd.read_csv('Dashboard/format_hour.csv')
+df['dteday'] = pd.to_datetime(df['dteday'])
 
-# Menyiapkan data day_df
-day_df = pd.read_csv("C:\\Users\\purwa\\Downloads\\Bike-sharing-dataset\\day.csv")
-day_df.head()
+st.set_page_config(
+    page_title="Bicycle Rental: Bike Sharing Dashboard",
+    page_icon="bar_chart:",
+    layout="wide"
+)
 
-drop_col = [] 
-for i in day_df.columns:
-  if i in drop_col:
-    day_df.drop(labels=i, axis=1, inplace=True)
+# create helper functions
 
-# Mengubah nama judul kolom
-day_df.rename(columns={
-    'dteday': 'dateday',
-    'yr': 'year',
-    'mnth': 'month',
-    'weathersit': 'weather_cond',
-    'cnt': 'count'
-}, inplace=True)
-
-# Mengubah angka menjadi keterangan
-day_df['month'] = day_df['month'].map({
-    1: 'Jan', 2: 'Feb', 3: 'Mar', 4: 'Apr', 5: 'May', 6: 'Jun',
-    7: 'Jul', 8: 'Aug', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dec'
-})
-day_df['season'] = day_df['season'].map({
-    1: 'Spring', 2: 'Summer', 3: 'Fall', 4: 'Winter'
-})
-day_df['weekday'] = day_df['weekday'].map({
-    0: 'Sun', 1: 'Mon', 2: 'Tue', 3: 'Wed', 4: 'Thu', 5: 'Fri', 6: 'Sat'
-})
-day_df['weather_cond'] = day_df['weather_cond'].map({
-    1: 'Clear/Partly Cloudy',
-    2: 'Misty/Cloudy',
-    3: 'Light Snow/Rain',
-    4: 'Severe Weather'
-})
-
-
-# Menyiapkan daily_rent_df
-def create_daily_rent_df(df):
-    daily_rent_df = df.groupby(by='dateday').agg({
-        'count': 'sum'
-    }).reset_index()
-    return daily_rent_df
-
-# Menyiapkan daily_casual_rent_df
-def create_daily_casual_rent_df(df):
-    daily_casual_rent_df = df.groupby(by='dateday').agg({
-        'casual': 'sum'
-    }).reset_index()
-    return daily_casual_rent_df
-
-# Menyiapkan daily_registered_rent_df
-def create_daily_registered_rent_df(df):
-    daily_registered_rent_df = df.groupby(by='dateday').agg({
-        'registered': 'sum'
-    }).reset_index()
-    return daily_registered_rent_df
+def create_monthly_users_df(df):
+    monthly_users_df = df.resample(rule='M', on='dteday').agg({
+        "casual": "sum",
+        "registered": "sum",
+        "cnt": "sum"
+    })
+    monthly_users_df.index = monthly_users_df.index.strftime('%b-%y')
+    monthly_users_df = monthly_users_df.reset_index()
+    monthly_users_df.rename(columns={
+        "dteday": "yearmonth",
+        "cnt": "total_rides",
+        "casual": "casual_rides",
+        "registered": "registered_rides"
+    }, inplace=True)
     
-# Menyiapkan season_rent_df
-def create_season_rent_df(df):
-    season_rent_df = df.groupby(by='season')[['registered', 'casual']].sum().reset_index()
-    return season_rent_df
+    return monthly_users_df
 
-# Menyiapkan monthly_rent_df
-def create_monthly_rent_df(df):
-    monthly_rent_df = df.groupby(by='month').agg({
-        'count': 'sum'
+def create_seasonly_users_df(df):
+    seasonly_users_df = df.groupby("season").agg({
+        "casual": "sum",
+        "registered": "sum",
+        "cnt": "sum"
     })
-    ordered_months = [
-        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-    ]
-    monthly_rent_df = monthly_rent_df.reindex(ordered_months, fill_value=0)
-    return monthly_rent_df
+    seasonly_users_df = seasonly_users_df.reset_index()
+    seasonly_users_df.rename(columns={
+        "cnt": "total_rides",
+        "casual": "casual_rides",
+        "registered": "registered_rides"
+    }, inplace=True)
+    
+    seasonly_users_df = pd.melt(seasonly_users_df,
+                                id_vars=['season'],
+                                value_vars=['casual_rides', 'registered_rides'],
+                                var_name='type_of_rides',
+                                value_name='count_rides')
+    
+    seasonly_users_df['season'] = pd.Categorical(seasonly_users_df['season'],
+                                                 categories=['Spring', 'Summer', 'Fall', 'Winter'])
+    
+    seasonly_users_df = seasonly_users_df.sort_values('season')
+    
+    return seasonly_users_df
 
-# Menyiapkan weekday_rent_df
-def create_weekday_rent_df(df):
-    weekday_rent_df = df.groupby(by='weekday').agg({
-        'count': 'sum'
-    }).reset_index()
-    return weekday_rent_df
-
-# Menyiapkan workingday_rent_df
-def create_workingday_rent_df(df):
-    workingday_rent_df = df.groupby(by='workingday').agg({
-        'count': 'sum'
-    }).reset_index()
-    return workingday_rent_df
-
-# Menyiapkan holiday_rent_df
-def create_holiday_rent_df(df):
-    holiday_rent_df = df.groupby(by='holiday').agg({
-        'count': 'sum'
-    }).reset_index()
-    return holiday_rent_df
-
-# Menyiapkan weather_rent_df
-def create_weather_rent_df(df):
-    weather_rent_df = df.groupby(by='weather_cond').agg({
-        'count': 'sum'
+def create_weekday_users_df(df):
+    weekday_users_df = df.groupby("weekday").agg({
+        "casual": "sum",
+        "registered": "sum",
+        "cnt": "sum"
     })
-    return weather_rent_df
+    weekday_users_df = weekday_users_df.reset_index()
+    weekday_users_df.rename(columns={
+        "cnt": "total_rides",
+        "casual": "casual_rides",
+        "registered": "registered_rides"
+    }, inplace=True)
+    
+    weekday_users_df = pd.melt(weekday_users_df,
+                               id_vars=['weekday'],
+                               value_vars=['casual_rides', 'registered_rides'],
+                               var_name='type_of_rides',
+                               value_name='count_rides')
+    
+    weekday_users_df['weekday'] = pd.Categorical(weekday_users_df['weekday'],
+                                                 categories=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'])
+    
+    weekday_users_df = weekday_users_df.sort_values('weekday')
+    
+    return weekday_users_df
 
+def create_hourly_users_df(df):
+    hourly_users_df = df.groupby("hr").agg({
+        "casual": "sum",
+        "registered": "sum",
+        "cnt": "sum"
+    })
+    hourly_users_df = hourly_users_df.reset_index()
+    hourly_users_df.rename(columns={
+        "cnt": "total_rides",
+        "casual": "casual_rides",
+        "registered": "registered_rides"
+    }, inplace=True)
+    
+    return hourly_users_df
 
-# Membuat komponen filter
-min_date = pd.to_datetime(day_df['dateday']).dt.date.min()
-max_date = pd.to_datetime(day_df['dateday']).dt.date.max()
- 
-start_date, end_date = (min_date, max_date)
-main_df = day_df[(day_df['dateday'] >= str(start_date)) & 
-                (day_df['dateday'] <= str(end_date))]
+# make filter components (komponen filter)
+min_date = df["dteday"].min()
+max_date = df["dteday"].max()
 
-# Menyiapkan berbagai dataframe
-daily_rent_df = create_daily_rent_df(main_df)
-daily_casual_rent_df = create_daily_casual_rent_df(main_df)
-daily_registered_rent_df = create_daily_registered_rent_df(main_df)
-season_rent_df = create_season_rent_df(main_df)
-monthly_rent_df = create_monthly_rent_df(main_df)
-weekday_rent_df = create_weekday_rent_df(main_df)
-workingday_rent_df = create_workingday_rent_df(main_df)
-holiday_rent_df = create_holiday_rent_df(main_df)
-weather_rent_df = create_weather_rent_df(main_df)
+# ----- SIDEBAR -----
+with st.sidebar:
+    # add capital bikeshare logo
+    st.image('Image/Rent Sepeda.jpg')
+    st.sidebar.header("Filter:")
 
+    # mengambil start_date & end_date dari date_input
+    start_date, end_date = st.date_input(
+        label="Date Filter", min_value=min_date,
+        max_value=max_date,
+        value=[min_date, max_date]
+    )
 
-# Membuat Dashboard secara lengkap
+st.sidebar.header("Copyright:")
 
-# Membuat judul
-st.header('Bike Rental Dashboard 🚲')
+st.sidebar.markdown("Maya Myerella")
 
-# Membuat jumlah penyewaan harian
-st.subheader('Daily Rentals')
+# hubungkan filter dengan main_df
+main_df = df[
+    (df["dteday"] >= str(start_date)) &
+    (df["dteday"] <= str(end_date))
+]
+
+# assign main_df ke helper functions yang telah dibuat sebelumnya
+monthly_users_df = create_monthly_users_df(main_df)
+weekday_users_df = create_weekday_users_df(main_df)
+seasonly_users_df = create_seasonly_users_df(main_df)
+hourly_users_df = create_hourly_users_df(main_df)
+
+# ----- MAINPAGE -----
+st.title(":bar_chart: Capital Bikeshare: Bike-Sharing Dashboard")
+st.markdown("##")
+
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    daily_rent_casual = daily_casual_rent_df['casual'].sum()
-    st.metric('Casual User', value= daily_rent_casual)
-
+    total_all_rides = main_df['cnt'].sum()
+    st.metric("Total Rides", value=total_all_rides)
 with col2:
-    daily_rent_registered = daily_registered_rent_df['registered'].sum()
-    st.metric('Registered User', value= daily_rent_registered)
- 
+    total_casual_rides = main_df['casual'].sum()
+    st.metric("Total Casual Rides", value=total_casual_rides)
 with col3:
-    daily_rent_total = daily_rent_df['count'].sum()
-    st.metric('Total User', value= daily_rent_total)
+    total_registered_rides = main_df['registered'].sum()
+    st.metric("Total Registered Rides", value=total_registered_rides)
 
-# Membuat jumlah penyewaan bulanan
-st.subheader('Monthly Rentals')
-fig, ax = plt.subplots(figsize=(24, 8))
-ax.plot(
-    monthly_rent_df.index,
-    monthly_rent_df['count'],
-    marker='o', 
-    linewidth=2,
-    color='tab:blue'
-)
+st.markdown("---")
 
-for index, row in enumerate(monthly_rent_df['count']):
-    ax.text(index, row + 1, str(row), ha='center', va='bottom', fontsize=12)
+# ----- CHART -----
+fig = px.line(monthly_users_df,
+              x='yearmonth',
+              y=['casual_rides', 'registered_rides', 'total_rides'],
+              color_discrete_sequence=["skyblue", "orange", "red"],
+              markers=True,
+              title="Monthly Count of Bikeshare Rides").update_layout(xaxis_title='', yaxis_title='Total Rides')
 
-ax.tick_params(axis='x', labelsize=25, rotation=45)
-ax.tick_params(axis='y', labelsize=20)
-st.pyplot(fig)
+st.plotly_chart(fig, use_container_width=True)
 
-# Membuat jumlah penyewaan berdasarkan season
-st.subheader('Seasonly Rentals')
+fig1 = px.bar(seasonly_users_df,
+              x='season',
+              y=['count_rides'],
+              color='type_of_rides',
+              color_discrete_sequence=["skyblue", "orange", "red"],
+              title='Count of bikeshare rides by season').update_layout(xaxis_title='', yaxis_title='Total Rides')
 
-fig, ax = plt.subplots(figsize=(16, 8))
+fig2 = px.bar(weekday_users_df,
+              x='weekday',
+              y=['count_rides'],
+              color='type_of_rides',
+              barmode='group',
+              color_discrete_sequence=["skyblue", "orange", "red"],
+              title='Count of bikeshare rides by weekday').update_layout(xaxis_title='', yaxis_title='Total Rides')
 
-sns.barplot(
-    x='season',
-    y='registered',
-    data=season_rent_df,
-    label='Registered',
-    color='tab:blue',
-    ax=ax
-)
+left_column, right_column = st.columns(2)
+left_column.plotly_chart(fig1, use_container_width=True)
+right_column.plotly_chart(fig2, use_container_width=True)
 
-sns.barplot(
-    x='season',
-    y='casual',
-    data=season_rent_df,
-    label='Casual',
-    color='tab:orange',
-    ax=ax
-)
+fig = px.line(hourly_users_df,
+              x='hr',
+              y=['casual_rides', 'registered_rides'],
+              color_discrete_sequence=["skyblue", "orange"],
+              markers=True,
+              title='Count of bikeshare rides by hour of day').update_layout(xaxis_title='', yaxis_title='Total Rides')
 
-for index, row in season_rent_df.iterrows():
-    ax.text(index, row['registered'], str(row['registered']), ha='center', va='bottom', fontsize=12)
-    ax.text(index, row['casual'], str(row['casual']), ha='center', va='bottom', fontsize=12)
+st.plotly_chart(fig, use_container_width=True)
 
-ax.set_xlabel(None)
-ax.set_ylabel(None)
-ax.tick_params(axis='x', labelsize=20, rotation=0)
-ax.tick_params(axis='y', labelsize=15)
-ax.legend()
-st.pyplot(fig)
+st.caption('Copyright (c), created by Maya Myerella')
 
-# Membuah jumlah penyewaan berdasarkan kondisi cuaca
-st.subheader('Weatherly Rentals')
-
-fig, ax = plt.subplots(figsize=(16, 8))
-
-colors=["tab:blue", "tab:orange", "tab:green"]
-
-sns.barplot(
-    x=weather_rent_df.index,
-    y=weather_rent_df['count'],
-    palette=colors,
-    ax=ax
-)
-
-for index, row in enumerate(weather_rent_df['count']):
-    ax.text(index, row + 1, str(row), ha='center', va='bottom', fontsize=12)
-
-ax.set_xlabel(None)
-ax.set_ylabel(None)
-ax.tick_params(axis='x', labelsize=20)
-ax.tick_params(axis='y', labelsize=15)
-st.pyplot(fig)
-
-# Membuat jumlah penyewaan berdasarkan weekday, working dan holiday
-st.subheader('Weekday, Workingday, and Holiday Rentals')
-
-fig, axes = plt.subplots(nrows=3, ncols=1, figsize=(15,10))
-
-colors1=["tab:blue", "tab:orange"]
-colors2=["tab:blue", "tab:orange"]
-colors3=["tab:blue", "tab:orange", "tab:green", "tab:red", "tab:purple", "tab:brown", "tab:pink"]
-
-# Berdasarkan workingday
-sns.barplot(
-    x='workingday',
-    y='count',
-    data=workingday_rent_df,
-    palette=colors1,
-    ax=axes[0])
-
-for index, row in enumerate(workingday_rent_df['count']):
-    axes[0].text(index, row + 1, str(row), ha='center', va='bottom', fontsize=12)
-
-axes[0].set_title('Number of Rents based on Working Day')
-axes[0].set_ylabel(None)
-axes[0].tick_params(axis='x', labelsize=15)
-axes[0].tick_params(axis='y', labelsize=10)
-
-# Berdasarkan holiday
-sns.barplot(
-  x='holiday',
-  y='count',
-  data=holiday_rent_df,
-  palette=colors2,
-  ax=axes[1])
-
-for index, row in enumerate(holiday_rent_df['count']):
-    axes[1].text(index, row + 1, str(row), ha='center', va='bottom', fontsize=12)
-
-axes[1].set_title('Number of Rents based on Holiday')
-axes[1].set_ylabel(None)
-axes[1].tick_params(axis='x', labelsize=15)
-axes[1].tick_params(axis='y', labelsize=10)
-
-# Berdasarkan weekday
-sns.barplot(
-  x='weekday',
-  y='count',
-  data=weekday_rent_df,
-  palette=colors3,
-  ax=axes[2])
-
-for index, row in enumerate(weekday_rent_df['count']):
-    axes[2].text(index, row + 1, str(row), ha='center', va='bottom', fontsize=12)
-
-axes[2].set_title('Number of Rents based on Weekday')
-axes[2].set_ylabel(None)
-axes[2].tick_params(axis='x', labelsize=15)
-axes[2].tick_params(axis='y', labelsize=10)
-
-plt.tight_layout()
-st.pyplot(fig)
-
-st.caption('Copyright (c) Maya Myerella 2024')
+# ----- HIDE STREAMLIT STYLE -----
+hide_st_style = """
+                <style>
+                #MainMenu {visibility: hidden;}
+                footer {visibility: hidden;}
+                header {visibility: hidden;}
+                </style>
+                """
+st.markdown(hide_st_style, unsafe_allow_html=True)
