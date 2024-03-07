@@ -9,8 +9,7 @@ Untuk informasi lebih lanjut, seperti latar belakang dataset ini, karakteristik 
 ```
 .
 ├── Dashboard
-│   ├── dashboard.py
-│   └── format_hour.csv
+│   └── dashboard.py
 ├── Bike-sharing-dataset
 │   ├── Readme.txt
 │   ├── day.csv
@@ -20,6 +19,7 @@ Untuk informasi lebih lanjut, seperti latar belakang dataset ini, karakteristik 
 |   └── Screenshot 2024-03-04 184515.png
 ├── README.md
 ├── Proyek_Analysis_Bike_Sharing.ipynb
+├── format_hour.csv
 └── requirements.txt
 ```
 
