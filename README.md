@@ -9,14 +9,13 @@ Untuk informasi lebih lanjut, seperti latar belakang dataset ini, karakteristik 
 ```
 .
 ├── Dashboard
-│   └── dashboard.py
+│   ├── dashboard.py
+|   └── Image
+|       └── Rent Sepeda.jpg
 ├── Bike-sharing-dataset
 │   ├── Readme.txt
 │   ├── day.csv
 |   └── hour.csv
-├── image
-|   ├── Rent Sepeda.jpg
-|   └── Screenshot 2024-03-04 184515.png
 ├── README.md
 ├── Proyek_Analysis_Bike_Sharing.ipynb
 ├── format_hour.csv
