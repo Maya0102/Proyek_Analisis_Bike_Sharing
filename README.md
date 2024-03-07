@@ -17,6 +17,7 @@ Untuk informasi lebih lanjut, seperti latar belakang dataset ini, karakteristik 
 │   ├── day.csv
 |   └── hour.csv
 ├── README.md
+├── Screenshot 2024-03-07 092801.png
 ├── Proyek_Analysis_Bike_Sharing.ipynb
 ├── format_hour.csv
 └── requirements.txt
