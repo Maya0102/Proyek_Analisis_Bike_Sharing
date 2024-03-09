@@ -8,18 +8,15 @@ Untuk informasi lebih lanjut, seperti latar belakang dataset ini, karakteristik 
 ## 1. File Structures
 ```
 .
-├── Dashboard
-│   ├── dashboard.py
-|   └── Image
-|       └── Rent Sepeda.jpg
 ├── Bike-sharing-dataset
 │   ├── Readme.txt
 │   ├── day.csv
 |   └── hour.csv
-├── README.md
-├── Screenshot 2024-03-07 092801.png
 ├── Proyek_Analysis_Bike_Sharing.ipynb
-├── format_hour.csv
+├── README.md
+├── Rent_Sepeda.jpg
+├── dashboard2.py
+├── format_day.csv
 └── requirements.txt
 ```
 
@@ -58,5 +55,3 @@ Untuk informasi lebih lanjut, seperti latar belakang dataset ini, karakteristik 
 ## 4. Image
 
 ![alt text](https://github.com/Maya0102/Proyek_Analisis_Bike_Sharing/blob/fcf5bf4df479d7b61a8a4ad6232e6f11692c11b0/Image/Rent%20Sepeda.jpg)
-
-![alt text](https://github.com/Maya0102/Proyek_Analisis_Bike_Sharing/blob/cb523e9efc035509b1ada3d01b1a5659b7da0495/Image/Screenshot%202024-03-04%20184515.png)
