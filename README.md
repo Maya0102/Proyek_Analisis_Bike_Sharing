@@ -46,11 +46,11 @@ Untuk informasi lebih lanjut, seperti latar belakang dataset ini, karakteristik 
 5. Hubungkan ke runtime yang di-host.
 6. Terakhir, jalankan sel kode.
 
-### `Dashboard/dashboard.py`
+### `dashboard2.py`
 1. Unduh proyek ini.
 2. Instal Streamlit di terminal atau command prompt Anda menggunakan `pip install streamlit`. Instal juga perpustakaan lain seperti pandas, numpy, scipy, matplotlib, dan seaborn jika belum diinstal.
-3. Harap dicatat, jangan pindahkan file csv karena berfungsi sebagai sumber data. Simpan dalam satu folder bersama dengan dashboard.py.
-4. Buka VSCode Anda dan jalankan file dengan mengklik terminal dan mengetikkan `streamlit run dashboard.py`.
+3. Harap dicatat, jangan pindahkan file csv karena berfungsi sebagai sumber data. Simpan dalam satu folder bersama dengan dashboard2.py.
+4. Buka VSCode Anda dan jalankan file dengan mengklik terminal dan mengetikkan `streamlit run dashboard2.py`.
 
 ## 4. Image
 
